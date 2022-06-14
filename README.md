@@ -1,0 +1,3 @@
+# FOREX_bot
+Simple Forex trading bot with multi-timeframe analysis and common technical analysis techniques
+RUN THE RSI.PY FILE 
