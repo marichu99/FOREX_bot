@@ -32,9 +32,9 @@ def conn():
     # check if the connection went through
     if not (valid_conn):
         print(f"The initialisation error is {mt5.last_error()}")
-    account = int(810414810)
+    account = int(810403203)
     # 810403203
-    password= "Marichu12"
+    password= "12233332"
     server ="EGMSecurities-Live"
     # login into your account 
     login = mt5.login(account,password,server)
