@@ -1,17 +1,159 @@
-
 import MetaTrader5 as mt5
 from datetime import datetime
 import time
 import pandas as pd
-import numpy as np
+import numpy as np    
 from threading import Thread
 
 
-SYMBOL = ["XAUUSD","EURUSD","USDCAD","USDJPY","AUDCAD"]
-TIMEFRAME = mt5.TIMEFRAME_M1  
+SYMBOL = ["XAUUSD","EURUSD","USDCAD","USDJPY","AUDCAD","GBPUSD","GBPJPY","EURJPY"]
+TIMEFRAME = mt5.TIMEFRAME_M15  
 high_TIMEFRAME=[mt5.TIMEFRAME_M30,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_H1,mt5.TIMEFRAME_H4]
 VOLUME=0.1
 N=0
+AWAIT_=False
+mar=""
+mar1=""
+standa=float(0.0)
+standa1=float(0.0)
+# HIGH PRICE DICTIONARY
+# counterHigh value dictionary
+counterHigh={"XAUUSD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"EURUSD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"USDCAD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"USDJPY":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"AUDCAD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}}
+xau_DictHigh={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+eur_DictHigh={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+jpy_DictHigh={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+cad_DictHigh={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+aud_DictHigh={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+
+
+# LOW PRICE DICTIONARY
+# counterHigh value dictionary
+counterLow={"XAUUSD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"EURUSD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"USDCAD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"USDJPY":{15:int(0),30:int(0),16385:int(0),16388:int(0)}
+            ,"AUDCAD":{15:int(0),30:int(0),16385:int(0),16388:int(0)}}
+            
+xau_DictLow={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+eur_DictLow={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+jpy_DictLow={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+cad_DictLow={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+aud_DictLow={1:{15:[],30:[],16385:[],16388:[]},
+             2:{15:[],30:[],16385:[],16388:[]},
+             3:{15:[],30:[],16385:[],16388:[]},
+             4:{15:[],30:[],16385:[],16388:[]},
+             5:{15:[],30:[],16385:[],16388:[]},
+             6:{15:[],30:[],16385:[],16388:[]},
+             7:{15:[],30:[],16385:[],16388:[]},
+             8:{15:[],30:[],16385:[],16388:[]},
+             9:{15:[],30:[],16385:[],16388:[]},
+             10:{15:[],30:[],16385:[],16388:[]},
+             11:{15:[],30:[],16385:[],16388:[]},
+             12:{15:[],30:[],16385:[],16388:[]}}
+
 
 J=""
 STARTT_POS=0
@@ -32,10 +174,10 @@ def conn():
     # check if the connection went through
     if not (valid_conn):
         print(f"The initialisation error is {mt5.last_error()}")
-    account = int(810414810)
+    account = int(36610) 
     # 810403203
     password= "Marichu12"
-    server ="EGMSecurities-Live"
+    server ="EGMSecurities-Demo"
     # login into your account 
     login = mt5.login(account,password,server)
     if not login:
@@ -85,7 +227,7 @@ def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
         print("shutdown() and quit")
        
 
-# signal generating functions
+# signal generating functions   
 def get_signal(TIMEFRAMEs):
     # bar data
     bars =mt5.copy_rates_from_pos(J,TIMEFRAMEs,1,SMA_PERIOD)
@@ -116,10 +258,9 @@ def get_signal(TIMEFRAMEs):
 # calculate the RSI
 def calculateRSI(TIMEFRAMEs):
     bars=mt5.copy_rates_from_pos(J,TIMEFRAMEs,STARTT_POS,NUM_BARS)
-    
     df=pd.DataFrame(bars)[['time','open','high','low','close']]
     df['time']=pd.to_datetime(df["time"],unit='s')
-    df=df[df["time"]> "2022-05-01"]
+    df=df[df["time"]> "2021-05-01"]
     close_delta=df["close"].diff()
     # make two series: one for lower closes and one for higher closes
     up=close_delta.clip(lower=0)
@@ -171,18 +312,50 @@ def calculateRSI(TIMEFRAMEs):
     
     # print("HIGH RSI DATAFRAME ")
     # print(highRSI.tail(20))
+    current_price=df.iloc[-1]["close"]
+    previous_price=df.iloc[-2]["close"]
+
     
     # low RSI dataframe
     data=df[df["rd_14"] <=30]
     lowRSI=pd.DataFrame(data=data)[["rd_14","close"]]
     # print("LOW RSI DATAFRAME ")
     # print(lowRSI.tail(20))
-    getDivergence(highRSI,lowRSI)
+    getDivergence(highRSI,lowRSI,TIMEFRAMEs)
 
     return atr,rd_14
+def await_Confirmation(TIMEFRAMEs,standa1,x,type):
+    global AWAIT_
+    setAwait(True)
+    while True:
+        mabao=mt5.copy_rates_from_pos(J,TIMEFRAMEs,STARTT_POS,NUM_BARS)
+        detaFremu=pd.DataFrame(mabao)[["close","open","high","low","time"]]
+        current_price=detaFremu.iloc[-1]["close"]
+        print(f"The current price is {current_price}")
+        previous_price=detaFremu.iloc[-2]["close"]
+        print(f"The previous price is {previous_price}")
+        latter_price=detaFremu.iloc[-3]["close"]
+        
+        tick=mt5.symbol_info_tick(J)
+        print(f"The type is {type}")
+        if type == "buy":
+            if current_price >previous_price:
+                if previous_price > latter_price:
+                    # buy order 
+                    market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standa1,tick.bid +TP_SD*standa1)
+                else: 
+                    break
+        elif type == "sell":
+            if current_price<previous_price:
+                if previous_price<latter_price:
+                    # sell order
+                    market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +x,tick.ask-TP_SD*standa1)
+                else: 
+                    break
+    time.sleep(7)
 
 # get the bullish and bearish divergence
-def getDivergence(highRSI,lowRSI):
+def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
     global trade_signal
     # print("LOW RSI")
     # print(lowRSI)
@@ -192,13 +365,199 @@ def getDivergence(highRSI,lowRSI):
     current_close_high=highRSI.iloc[-1]["close"]
     previous_high_rsi=highRSI.iloc[-2]["rd_14"]
     previous_close_high=highRSI.iloc[-2]["close"]
+    # highest price
+    highest_price =highRSI.loc[highRSI["close"]==highRSI["close"].max()]
+    highest_price=highest_price.iloc[-1]["close"]
+    
+    def fillDict(we,you,vecna):
+        from_date=datetime(2022,x,v)
+        to_date=datetime(2022,x,v+1)
+        mbao=mt5.copy_rates_range(we,you,from_date,to_date)
+        detFrem=pd.DataFrame(mbao)[["close","open","high","low","time"]]
+        detFrem["time"]=pd.to_datetime(detFrem["time"],unit="s")
 
+        if we=="XAUUSD": 
+            # if the length of gold is below 2 elements, 
+            if len(xau_DictHigh[x][you]) <2:
+                # append to the high dictionary
+                xau_DictHigh[x][you].append(vecna)
+                # append the length of the gold high dictionary at a specific timeframe to the counterHigh dictionary
+                counterHigh[we][you]=(len(xau_DictHigh[x][you]))
+                counterXH=counterHigh[we][you]
+            elif len(xau_DictHigh[x][you])>2:
+               if xau_DictHigh[x][you][counterXH] != xau_DictHigh[x][you][counterXH-1]:
+                xau_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(xau_DictHigh[you][x]))
+                counterXH=counterHigh[we][you]
+        if we =="EURUSD":
+            if len(eur_DictHigh[x][you])<2:
+                eur_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(eur_DictHigh[x][you]))
+                counterEH=counterHigh[we][you]
+            elif len(eur_DictHigh[x][you])>2:
+              counterEH=counterHigh[we][you]
+              if eur_DictHigh[x][you][counterEH] != eur_DictHigh[x][you][counterEH-1]:
+                eur_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(eur_DictHigh[x][you]))
+                counterEH=counterHigh[we][you]
+        if we =="USDCAD":
+            if len(cad_DictHigh[x][you])<2:
+                cad_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(cad_DictHigh[x][you]))
+                counterCH=counterHigh[we][you]
+            elif len(cad_DictHigh[x][you])>2:
+             counterCH=counterHigh[we][you]
+             if  cad_DictHigh[x][you][counterCH] != cad_DictHigh[x][you][counterCH-1]:
+                cad_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(cad_DictHigh[x][you]))
+                counterCH=counterHigh[we][you]
+        if we =="USDJPY":
+            if len(jpy_DictHigh[x][you])<2:
+                jpy_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(jpy_DictHigh[x][you]))
+                counterJH=counterHigh[we][you]
+            elif len(jpy_DictHigh[x][you])>2:
+             counterJH=counterHigh[we][you]
+             if jpy_DictHigh[x][you][counterJH] != jpy_DictHigh[x][you][counterJH-1]:
+                jpy_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(jpy_DictHigh[x][you]))
+                counterJH=counterHigh[we][you]
+        if we =="AUDCAD":
+            if len(aud_DictHigh[x][you])<2:
+                aud_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(aud_DictHigh[x][you]))
+                counterAH=counterHigh[we][you]
+            elif len(aud_DictHigh[x][you])>2:
+             counterAH=counterHigh[we][you]
+             if aud_DictHigh[x][you][counterAH] != aud_DictHigh[x][you][counterAH-1]:
+                aud_DictHigh[x][you].append(vecna)
+                counterHigh[we][you]=(len(aud_DictHigh[x][you]))
+                counterAH=counterHigh[we][you]
+    def fillDictLow(we,you,vecna):
+        from_date=datetime(2022,x,v)
+        to_date=datetime(2022,x,v+1)
+        mbao=mt5.copy_rates_range(we,you,from_date,to_date)
+        detFrem=pd.DataFrame(mbao)[["close","open","high","low","time"]]
+        detFrem["time"]=pd.to_datetime(detFrem["time"],unit="s")
+        if we=="XAUUSD":
+            if len(xau_DictLow[x][you]) <2:
+                xau_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(xau_DictLow[x][you]))
+                counterXL=counterLow[we][you]
+            elif len(xau_DictLow[x][you])>2:
+             counterXL=counterLow[we][you]
+             if xau_DictLow[x][you][counterXL] != xau_DictLow[x][you][counterXL-1]:
+                xau_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(xau_DictLow[x][you]))
+                counterXL=counterLow[we][you]
+            # print(f"The counter value on GOLD low Dict is {counterXL}")
+            # print(f"The Gold Low Dictionary is {xau_DictLow }")
+            # print(f"The length of Gold'd low dictionary is {len(xau_DictLow[x][you])}")
+            # print(f"NUM BARS IS {NUM_BARS}")
+        if we =="EURUSD":
+            if len(eur_DictLow[x][you])<2:
+                eur_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(eur_DictLow[x][you]))
+                counterEL=counterLow[we][you]
+                print(f"EL counter value {counterEL}")
+            elif len(eur_DictLow[x][you])>2:
+             counterEL=counterLow[we][you]
+             if eur_DictLow[x][you][counterEL] != eur_DictLow[x][you][counterEL-1]:
+                eur_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(eur_DictLow[x][you]))
+                counterEL=counterLow[we][you]
+        if we =="USDCAD":
+            if len(cad_DictLow[x][you])<2:
+                cad_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(cad_DictLow[x][you]))
+                counterCL=counterLow[we][you]
+            elif len(cad_DictLow[x][you])>2:
+             counterCL=counterLow[we][you]
+             if cad_DictLow[x][you][counterCL] != cad_DictLow[x][you][counterCL-1]:
+                cad_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(cad_DictLow[x][you]))
+                counterCL=counterLow[we][you]                
+        if we =="USDJPY":
+            if len(jpy_DictLow[x][you])<2:
+                jpy_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(jpy_DictLow[x][you]))
+                counterJL=counterLow[we][you]
+            elif len(jpy_DictLow[x][you])>2:
+             counterJL=counterLow[we][you]
+             if jpy_DictLow[x][you][counterJL] != jpy_DictLow[x][you][counterJL-1]:
+                jpy_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(jpy_DictLow[x][you]))
+                counterJL=counterLow[we][you]
+        if we =="AUDCAD":
+            if len(aud_DictLow[x][you])<2:
+                aud_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(aud_DictLow[x][you]))
+                counterAL=counterLow[we][you]
+            elif len(aud_DictLow[x][you])>2:
+             counterAL=counterLow[we][you]  
+             if aud_DictLow[x][you][counterAL] != aud_DictLow[x][you][counterAL-1]:
+                aud_DictLow[x][you].append(vecna)
+                counterLow[we][you]=(len(aud_DictLow[x][you]))
+                counterAL=counterLow[we][you]      
+        # create a separate file and save the backtest data
+        # bTest=pd.DataFrame(xau_DictHigh)
+        #   bTest.to_csv(r"C:/xampp/htdocs/Python/FOREX", index=False)
+
+            
+
+    # checking for highest price in the higher timeframes and updating the highprice dictionary for structure analysis
+    if TIMEFRAMEs in [15,30,16385,16388]:
+        if N == 15:
+            t_type="15 min timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(highest_price)
+            fillDict(we=J,you=N,vecna=highest_price)
+        elif N == 30:
+            t_type="30 min timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(highest_price)
+            fillDict(we=J,you=N,vecna=highest_price)
+        elif N == 16385:
+            t_type="1 hour timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(highest_price)
+            fillDict(we=J,you=N,vecna=highest_price)
+        elif N==16388:
+            t_type="4 Hour timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(highest_price)
+            fillDict(we=J,you=N,vecna=highest_price)
+    
     # LOW PRICE 
     current_low_rsi=lowRSI.iloc[-1]["rd_14"]
     current_close_low=lowRSI.iloc[-1]["close"]
     previous_low_rsi=lowRSI.iloc[-2]["rd_14"]
     previous_close_low=lowRSI.iloc[-2]["close"]
-    
+    lowestPrice=lowRSI.loc[lowRSI["close"]==lowRSI["close"].max()]
+    lowestPrice=lowestPrice.iloc[-1]["close"]
+    # checking for lowest price in the higher timeframes and updating the low price dictionary for structure analysis
+    if TIMEFRAMEs in [15,30,16385,16388]:
+        if N == 15:
+            t_type="15 min timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(lowestPrice)
+            fillDictLow(we=J,you=N,vecna=lowestPrice)
+        elif N == 30:
+            t_type="30 min timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(lowestPrice)
+            fillDictLow(we=J,you=N,vecna=lowestPrice)
+        elif N == 16385:
+            t_type="1 hour timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(lowestPrice)
+            fillDictLow(we=J,you=N,vecna=lowestPrice)
+        elif N==16388:
+            t_type="4 Hour timeframe"
+            # print(f"The highest price in {t_type}")
+            # print(lowestPrice)
+            fillDictLow(we=J,you=N,vecna=lowestPrice)
+   
     # logic
     """
     if current_close_high is in the range of the previous_close_high or higher than it
@@ -227,20 +586,35 @@ def calculateSMA(fast_sma,prev_fast_sma,slow_sma):
     """
     # logic
     if fast_sma>slow_sma and prev_fast_sma< slow_sma:
+        global CROSS_OVER
         CROSS_OVER="bullish_cross_over"
         return "bullish_crossover"
 
     elif fast_sma<slow_sma and prev_fast_sma >slow_sma:
         CROSS_OVER="bearish_crossover"
-        return "bearish_crossover"
+        return "bearish_crossover"   
 
+def setAwait(booly):
+    global AWAIT_
+    AWAIT_=booly
+def await_Details(type):
+    if J in ["USDJPY","GBPJPY","EURJPY"]:
+        SL=0.50
+    else:
+        SL=0.0050
+    if type=="buy":
+        await_Confirmation(type=mar,TIMEFRAMEs=TIMEFRAME,standa1=standa,x=SL)
+    elif type=="sell":
+        await_Confirmation(type=mar1,TIMEFRAMEs=TIMEFRAME,standa1=standa1,x=SL)
 
-   
 def main():
+    
     conn()
     # strategy loop
-    while True:
-        for j in  SYMBOL:
+    def wholeThing():     
+       if AWAIT_ == False:        
+         while True:
+          for j in  SYMBOL:
               for s in high_TIMEFRAME:
                 global N
                 N=s
@@ -252,46 +626,69 @@ def main():
                     t_type="1 hour timeframe"
                 elif N==16388:
                     t_type="4 Hour timeframe"
-                print(N)
+                # print(N)
+                global v
+                global x
+                v=int(1)
+                v=v+1
+                x=int(5)
+                if v >29:
+                    x=x+1
+                    v= int(1)
+                    if x > 11:
+                        x=int(1)
+                        v=int(1)
             
-        # if no positions are open
+              # if no positions are open
                 if mt5.positions_total() <4:
                     # get the bolinger band signal
                     global J
                     J=j
-                    signal, standard_deviation =get_signal(TIMEFRAMEs=TIMEFRAME)
+                    signal, standard_deviation =get_signal(TIMEFRAMEs=s)
                     if signal != "None" and standard_deviation != "None":
                         print(f"The signal is {signal} and the standard deviation is {standard_deviation}")
                         print(f"The symbol is {J} and the Timeframe is {t_type}")
                     # get the rsi and atr signals
-                    atr,rsi =calculateRSI(TIMEFRAMEs=N)
-                    atr=atr*100
-                    if atr >0 and rsi >0:
-                        print(f"The RSI is {rsi} and the ATR is {atr} at the {t_type}")            
-                    tick =mt5.symbol_info_tick(J)
-                    # get the rsi divergence
+                        atr,rsi =calculateRSI(TIMEFRAMEs=N)
+                        atr=atr*100
+                        global NUM_BARS
+                        if atr >0 and rsi >0:
+                            # print(f"The RSI is {rsi} and the ATR is {atr} at the {t_type}")            
+                            tick =mt5.symbol_info_tick(J)
+                            # get the rsi divergence
 
-                    if signal == "buy" and rsi <30 or trade_signal =="buy":
-                        # check for a buy signal on the lower timeframes
-                        mar,standa =get_signal(TIMEFRAMEs=TIMEFRAME)
-                        atrr,rsii= calculateRSI(TIMEFRAMEs=TIMEFRAME)
-                        atrr=atrr*100
-                        if mar =="buy" and standa !="None" and rsii <30:
-                         market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standard_deviation,tick.bid +TP_SD*standard_deviation)
-                    elif signal == "sell" and rsi>70:
-                        # check for a sell signal on the lower timeframes
-                        mar,standa =get_signal(TIMEFRAMEs=TIMEFRAME)
-                        atrr,rsii= calculateRSI(TIMEFRAMEs=TIMEFRAME)
-                        atrr=atrr*100
-                        if mar =="sell" and standa !="None" and rsii >70:
-                         market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL_SD*standard_deviation,tick.ask-TP_SD*standard_deviation)
-                    elif trade_signal == "buy" and signal !="None":
-                        market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD * standard_deviation,tick.bid +TP_SD*standard_deviation)
-                    elif trade_signal == "sell" and standard_deviation != None:
-                        market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL_SD*standard_deviation,tick.ask-TP_SD*standard_deviation)
-             
-        # check for signal every 20 seconds
-        time.sleep(5)
+                            if signal == "buy" and rsi <30 or trade_signal =="buy":
+                                # check for a buy signal on the lower timeframes
+                                mar1,standa1 =get_signal(TIMEFRAMEs=TIMEFRAME)
+                                atrr1,rsii1= calculateRSI(TIMEFRAMEs=TIMEFRAME)
+                                atrr1=atrr1*100
+                                if J in ["USDJPY","GBPJPY","EURJPY"]:
+                                        SL=0.50
+                                else:
+                                        SL=0.0050
+                                if mar1 =="buy" and standa1 != None and rsii1 <30:       
+                                    #await_Details(type=mar1)                   
+                                    market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standa1,tick.bid +TP_SD*standa1)
+                            elif signal == "sell" and rsi>70 or trade_signal =="sell":
+                                # check for a sell signal on the lower timeframes
+                                mar,standa =get_signal(TIMEFRAMEs=TIMEFRAME)
+                                atrr,rsii= calculateRSI(TIMEFRAMEs=TIMEFRAME)
+                                atrr=atrr*100  
+                                if J in ["USDJPY","GBPJPY","EURJPY"]:
+                                        SL=0.50
+                                else:
+                                        SL=0.0050
+                                if mar =="sell" and standa != None and rsii >70:
+                                    # await_Details(type=mar)
+                                     market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL,tick.ask-TP_SD*standa)
+                            elif trade_signal == "buy" and signal !=None:
+                                market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL ,tick.bid +TP_SD*standard_deviation)
+                            elif trade_signal == "sell" and signal != None:
+                                market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL,tick.ask-TP_SD*standard_deviation)
+            # check for signal every 5 seconds
+    if AWAIT_==False:
+        wholeThing()  
+    time.sleep(7)
 main()
 
 

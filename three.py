@@ -7,7 +7,7 @@ def conn():
     init = mt5.initialize()
     if not init:
         print(f"The Initialisation error is {mt5.last_error()}")
-    account = int(810403203)
+    account = int(810414810)
     password = "Marichu12"
     server = "EGMSecurities-Live"
     auth= mt5.login(account,password,server)
