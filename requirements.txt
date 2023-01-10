@@ -1,0 +1,10 @@
+selenium
+pandas
+numpy
+scipy
+scikit-learn
+numpy
+matplotlib
+MetaTrader5
+
+

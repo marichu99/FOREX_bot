@@ -1,0 +1,2 @@
+from ibm_watson import SpeechToTextv1
+0

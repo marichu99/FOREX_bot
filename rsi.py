@@ -4,7 +4,8 @@ import time
 import pandas as pd
 import numpy as np    
 from threading import Thread
-
+import json
+from email.message import EmailMessage 
 
 SYMBOL = ["XAUUSD","EURUSD","USDCAD","USDJPY","AUDCAD","GBPUSD","GBPJPY","EURJPY"]
 TIMEFRAME = mt5.TIMEFRAME_M15  
@@ -168,6 +169,10 @@ FSMA_PERIOD = 10 # number of periods in the fast simple moving average
 SL_SMA_PERIOD = 50 # number of periods in the slow moving average
 CROSS_OVER=""
 trade_signal=""
+symbol_info=pd.DataFrame(
+    
+)
+
 def conn():
     # start the connection to MT5
     valid_conn= mt5.initialize()
@@ -182,8 +187,23 @@ def conn():
     login = mt5.login(account,password,server)
     if not login:
         print(f"The login error was{mt5.last_error()}")
+        return "no success"
     else:
         print("login Successful")
+        orders=mt5.positions_get()
+        if orders == None :
+            print(f"The are no open positions")
+        elif len(orders)>=1:
+            print("We have some open positions")
+            df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume","price_open"]]
+            
+            df_positions.rename(columns={"symbol":"Symbol"},inplace=True)
+            df_positions["id"]=df_positions.index
+            print(df_positions)
+            this_Dict=df_positions.to_dict("list")            
+            print(this_Dict)
+            return "success"
+        
 
 
 # make an order from the terminal
@@ -213,6 +233,7 @@ def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
     }
     result = mt5.order_send(request)
     print("1. order_send(): by {} {} lots at {} with deviation={} points".format(symbol,volume,price,deviation))
+    
     if result.retcode != mt5.TRADE_RETCODE_DONE:
         print("2. order_send failed, retcode={}".format(result.retcode))
         # request the result as a dictionary and display it element by element
@@ -225,15 +246,27 @@ def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
                 for tradereq_filed in traderequest_dict:
                     print("       traderequest: {}={}".format(tradereq_filed,traderequest_dict[tradereq_filed]))
         print("shutdown() and quit")
+    if mt5.positions_total() == 4:
+        while True:
+            orders=mt5.positions_get()
+            if orders == None :
+                print(f"The are no open positions")
+            elif len(orders)>=1:
+                df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume"]]
+                # print(df_positions)
+                this_Dict=df_positions.to_dict()
+                # print(this_Dict)
+            time.sleep(5)
        
 
 # signal generating functions   
 def get_signal(TIMEFRAMEs):
     # bar data
-    bars =mt5.copy_rates_from_pos(J,TIMEFRAMEs,1,SMA_PERIOD)
+    bars =mt5.copy_rates_from_pos(J,TIMEFRAMEs,1,NUM_BARS)
     # converting to dataframe
     df =pd.DataFrame(bars)
-    print(f"The symbol is {J}")
+    # print(f"The symbol is {J}")
+    df=df.tail(20)
     # simple moving average
     sma =df['close'].mean()
     # standard deviation
@@ -247,7 +280,8 @@ def get_signal(TIMEFRAMEs):
     # last close price
     last_price =df.iloc[-1]["close"]
 
-    print(f"The last price is {last_price} and upper band is {upper_band} and the lower band is {lower_band}")
+    # print(f"The last price is {last_price} and upper band is {upper_band} and the lower band is {lower_band}")
+    # print(df)
     # finding the signal
     if last_price <lower_band: 
         return 'buy',sd
@@ -329,7 +363,7 @@ def await_Confirmation(TIMEFRAMEs,standa1,x,type):
     setAwait(True)
     while True:
         mabao=mt5.copy_rates_from_pos(J,TIMEFRAMEs,STARTT_POS,NUM_BARS)
-        detaFremu=pd.DataFrame(mabao)[["close","open","high","low","time"]]
+        detaFremu=pd.DataFrame(data=mabao)[["close","open","high","low","time"]]
         current_price=detaFremu.iloc[-1]["close"]
         print(f"The current price is {current_price}")
         previous_price=detaFremu.iloc[-2]["close"]
@@ -602,17 +636,40 @@ def await_Details(type):
         SL=0.50
     else:
         SL=0.0050
-    if type=="buy":
-        await_Confirmation(type=mar,TIMEFRAMEs=TIMEFRAME,standa1=standa,x=SL)
-    elif type=="sell":
-        await_Confirmation(type=mar1,TIMEFRAMEs=TIMEFRAME,standa1=standa1,x=SL)
-
+    current_price=dfs.iloc[-1]["close"]
+    print(f"The current price is {current_price}")
+    previous_price=dfs.iloc[-2]["close"]
+    print(f"The previous price is {previous_price}")
+    latter_price=dfs.iloc[-3]["close"]
+    
+    tick=mt5.symbol_info_tick(J)
+    print(f"The type is {type}")
+    if type == "buy":
+        if current_price >previous_price:
+            if previous_price > latter_price:
+                # buy order 
+                market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standa1,tick.bid +TP_SD*standa1)
+             
+                
+    elif type == "sell":
+        if current_price<previous_price:
+            if previous_price<latter_price:
+                # sell order
+                market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +x,tick.ask-TP_SD*standa1)
+             
+                
 def main():
     
-    conn()
+    connection=conn()
     # strategy loop
-    def wholeThing():     
-       if AWAIT_ == False:        
+    print(f"The connection is {connection}")
+        
+    resy={
+        "Symbol":"",
+        "Type":"",
+        "Multi-Time Frame":""
+    }
+    def wholeThing(): 
          while True:
           for j in  SYMBOL:
               for s in high_TIMEFRAME:
@@ -629,6 +686,7 @@ def main():
                 # print(N)
                 global v
                 global x
+                # x and v are variables used to control dates, which are in turn used to control short and long term price dataframe es
                 v=int(1)
                 v=v+1
                 x=int(5)
@@ -644,34 +702,95 @@ def main():
                     # get the bolinger band signal
                     global J
                     J=j
+                    
+                    global NUM_BARS
+                    bars =mt5.copy_rates_from_pos(J,TIMEFRAME,1,NUM_BARS)
+                    
+                    # converting to dataframe
+                    global dfs
+                    dfs =pd.DataFrame(bars)  
+                    # print(dfs) 
+                    current_price=dfs.iloc[-1]["close"] 
+                    current_price_high=dfs.iloc[-1]["high"]
+                    current_price_low=dfs.iloc[-1]["low"]
+                    previous_price=dfs.iloc[-2]["close"]
+                    previous_price_high=dfs.iloc[-2]["high"]
+                    previous_price_low=dfs.iloc[-2]["low"]
+                    previous_price_open=dfs.iloc[-2]["open"]
+                    latter_price=dfs.iloc[-3]["close"]
+                    latter_price_high=dfs.iloc[-3]["high"]
+                    latter_price_low=dfs.iloc[-3]["low"]
+                    # bearish candle
+                    if previous_price<previous_price_open:
+                        if (previous_price_high-previous_price_open) > (previous_price-previous_price_low):
+                            pinbar="bearish"
+                    # bullish candle
+                    if previous_price>previous_price_open:
+                        if (previous_price_high-previous_price_open) < (previous_price-previous_price_low):
+                            pinbar="bullish"
+                    if current_price<previous_price and previous_price<latter_price:
+                        t_sell=True
+                    elif current_price>previous_price and previous_price>latter_price:
+                        t_buy=True
+                    # we are trying to get price data on different pairs
+                    xau=mt5.symbol_info(J)._asdict()
+                    gold=pd.DataFrame.from_dict([xau])[["ask","bid"]]
+                    gold.index=J
+                    print(gold)
+                    orders=mt5.positions_get()
+                    if orders == None :
+                        print(f"The are no open positions")
+                    elif len(orders)>=1:
+                        df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume"]]
+                        # print(df_positions)
+                        this_Dict=df_positions.to_dict()
+                        # print(this_Dict)
+                        with open("data1.json","w") as posit:
+                            json.dump(this_Dict,posit)
                     signal, standard_deviation =get_signal(TIMEFRAMEs=s)
-                    if signal != "None" and standard_deviation != "None":
+                    
+                    if signal != None and standard_deviation !=None:
                         print(f"The signal is {signal} and the standard deviation is {standard_deviation}")
                         print(f"The symbol is {J} and the Timeframe is {t_type}")
                     # get the rsi and atr signals
                         atr,rsi =calculateRSI(TIMEFRAMEs=N)
                         atr=atr*100
-                        global NUM_BARS
+                        
                         if atr >0 and rsi >0:
-                            # print(f"The RSI is {rsi} and the ATR is {atr} at the {t_type}")            
+                            print(f"The RSI is {rsi} and the ATR is {atr} at the {t_type}")            
                             tick =mt5.symbol_info_tick(J)
                             # get the rsi divergence
 
                             if signal == "buy" and rsi <30 or trade_signal =="buy":
                                 # check for a buy signal on the lower timeframes
                                 mar1,standa1 =get_signal(TIMEFRAMEs=TIMEFRAME)
+                                if mar1!= None and standa1!=None:
+                                    print("We have a multitimeframe buy signal")
+                                    resy["Type"]="buy"
+                                    resy["Symbol"]=J
+                                    resy["Multi-Time Frame"]="NOT"
+                                    
+                                        
                                 atrr1,rsii1= calculateRSI(TIMEFRAMEs=TIMEFRAME)
                                 atrr1=atrr1*100
                                 if J in ["USDJPY","GBPJPY","EURJPY"]:
                                         SL=0.50
                                 else:
                                         SL=0.0050
-                                if mar1 =="buy" and standa1 != None and rsii1 <30:       
-                                    #await_Details(type=mar1)                   
-                                    market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standa1,tick.bid +TP_SD*standa1)
+                                if mar1 =="buy" and standa1 != None and rsii1 <30:   
+                                    print("Multi- Time frame signal to buy low")
+                                    resy["Type"]="buy"
+                                    resy["Symbol"]=J
+                                    resy["Multi-Time Frame"]="YES"
+                                        # candle stick confirmation
+                                    # if t_buy==True or pinbar== "bullish":
+                                    market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standa1,tick.bid +TP_SD*standa1)                 
+                                    # market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL_SD *standa1,tick.bid +TP_SD*standa1)
                             elif signal == "sell" and rsi>70 or trade_signal =="sell":
                                 # check for a sell signal on the lower timeframes
                                 mar,standa =get_signal(TIMEFRAMEs=TIMEFRAME)
+                                if mar != None and standa != None:
+                                    print("We have multitimeframe sell signal")
                                 atrr,rsii= calculateRSI(TIMEFRAMEs=TIMEFRAME)
                                 atrr=atrr*100  
                                 if J in ["USDJPY","GBPJPY","EURJPY"]:
@@ -679,16 +798,21 @@ def main():
                                 else:
                                         SL=0.0050
                                 if mar =="sell" and standa != None and rsii >70:
-                                    # await_Details(type=mar)
-                                     market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL,tick.ask-TP_SD*standa)
+                                     print("Multi-timeframe signal to sell high")
+                                    #  if t_sell==True and pinbar== "bearish":
+                                     market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +x,tick.ask-TP_SD*standa)
+                                    #  market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL,tick.ask-TP_SD*standa)
                             elif trade_signal == "buy" and signal !=None:
                                 market_order(J,VOLUME,'buy',DEVIATION,MAGIC,tick.ask -SL ,tick.bid +TP_SD*standard_deviation)
                             elif trade_signal == "sell" and signal != None:
                                 market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL,tick.ask-TP_SD*standard_deviation)
+                                                 
             # check for signal every 5 seconds
-    if AWAIT_==False:
+                with open("data.json","w") as dataF:
+                    json.dump(resy,dataF)
+    if connection == "success":
         wholeThing()  
-    time.sleep(7)
+    time.sleep(12)
 main()
 
 
