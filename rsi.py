@@ -656,8 +656,27 @@ def await_Details(type):
             if previous_price<latter_price:
                 # sell order
                 market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +x,tick.ask-TP_SD*standa1)
-             
-                
+
+# this function tries to concatenate the famous pairs dataframe  \
+# data_dict={"ask":0,"bid":0}
+dataF_arr=[]
+def concatDF():   
+    global dataF_arr
+    for symb in SYMBOL:
+        xau=mt5.symbol_info(symb)._asdict()
+        gold=pd.DataFrame.from_dict([xau])[["ask","bid","price_change"]]
+        gold["symbol"]=symb
+        dataF_arr.append(gold)
+        # print(dataF_arr)
+    print(f"The length is {len(dataF_arr)}")
+    if len(dataF_arr) == 8:
+        new_Data_DF=pd.concat(dataF_arr,axis=0,ignore_index=True)
+        # print(new_Data_DF)
+        price_Dict=new_Data_DF.to_dict("dict")
+        print(price_Dict)
+    elif len(dataF_arr) > 8:
+        dataF_arr=[]
+
 def main():
     
     connection=conn()
@@ -733,10 +752,8 @@ def main():
                     elif current_price>previous_price and previous_price>latter_price:
                         t_buy=True
                     # we are trying to get price data on different pairs
-                    xau=mt5.symbol_info(J)._asdict()
-                    gold=pd.DataFrame.from_dict([xau])[["ask","bid"]]
-                    gold.index=J
-                    print(gold)
+                    
+                    concatDF()
                     orders=mt5.positions_get()
                     if orders == None :
                         print(f"The are no open positions")
@@ -750,14 +767,14 @@ def main():
                     signal, standard_deviation =get_signal(TIMEFRAMEs=s)
                     
                     if signal != None and standard_deviation !=None:
-                        print(f"The signal is {signal} and the standard deviation is {standard_deviation}")
-                        print(f"The symbol is {J} and the Timeframe is {t_type}")
+                        # print(f"The signal is {signal} and the standard deviation is {standard_deviation}")
+                        # print(f"The symbol is {J} and the Timeframe is {t_type}")
                     # get the rsi and atr signals
                         atr,rsi =calculateRSI(TIMEFRAMEs=N)
                         atr=atr*100
                         
                         if atr >0 and rsi >0:
-                            print(f"The RSI is {rsi} and the ATR is {atr} at the {t_type}")            
+                            # print(f"The RSI is {rsi} and the ATR is {atr} at the {t_type}")            
                             tick =mt5.symbol_info_tick(J)
                             # get the rsi divergence
 
